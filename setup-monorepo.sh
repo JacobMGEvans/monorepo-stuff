@@ -1,24 +1,20 @@
 #!/bin/bash
 
-# Create a bootstrap script for the TurboRepo monorepo with Cloudflare Workers
 set -e
 
-# Define text colors for better output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 echo -e "${BLUE}=== Creating TurboRepo with Cloudflare Workers Monorepo ===${NC}"
 
-# Create the base directory
 REPO_NAME=${1:-"monorepo-cloudflare"}
 mkdir -p "$REPO_NAME"
 cd "$REPO_NAME"
 
 echo -e "${YELLOW}Creating directory structure...${NC}"
 
-# Create directory structure
 mkdir -p .github/workflows
 mkdir -p apps/app1/src
 mkdir -p apps/app2/src
@@ -29,7 +25,6 @@ mkdir -p workers/ci-cd-worker/src/durable-objects
 
 echo -e "${YELLOW}Creating root configuration files...${NC}"
 
-# Create root package.json
 cat > package.json << 'EOF'
 {
   "name": "monorepo-cloudflare",
@@ -48,7 +43,6 @@ cat > package.json << 'EOF'
 }
 EOF
 
-# Create turbo.json
 cat > turbo.json << 'EOF'
 {
   "$schema": "https://turbo.build/schema.json",
@@ -82,7 +76,6 @@ cat > turbo.json << 'EOF'
 }
 EOF
 
-# Create pnpm-workspace.yaml
 cat > pnpm-workspace.yaml << 'EOF'
 packages:
   - 'apps/*'
@@ -92,7 +85,6 @@ EOF
 
 echo -e "${YELLOW}Creating GitHub Actions workflow...${NC}"
 
-# Create GitHub Actions workflow file
 cat > .github/workflows/ci-cd.yml << 'EOF'
 name: CI/CD Pipeline
 
@@ -199,7 +191,6 @@ EOF
 
 echo -e "${YELLOW}Creating packages...${NC}"
 
-# Create shared-ui package
 cat > packages/shared-ui/package.json << 'EOF'
 {
   "name": "shared-ui",
@@ -219,7 +210,6 @@ export const Button = () => {
 };
 EOF
 
-# Create utils package
 cat > packages/utils/package.json << 'EOF'
 {
   "name": "utils",
@@ -241,7 +231,6 @@ EOF
 
 echo -e "${YELLOW}Creating sample applications...${NC}"
 
-# Create App1
 cat > apps/app1/package.json << 'EOF'
 {
   "name": "app1",
@@ -264,7 +253,6 @@ import { formatDate } from 'utils';
 console.log('App1 initialized with:', Button(), formatDate(new Date()));
 EOF
 
-# Create App2
 cat > apps/app2/package.json << 'EOF'
 {
   "name": "app2",
@@ -289,7 +277,6 @@ EOF
 
 echo -e "${YELLOW}Creating Cloudflare Workers...${NC}"
 
-# Create Build Worker
 cat > workers/build-worker/package.json << 'EOF'
 {
   "name": "build-worker",
@@ -488,7 +475,6 @@ export default {
 export { BuildState } from './durable-objects/build-state';
 EOF
 
-# Create CI/CD Worker
 cat > workers/ci-cd-worker/package.json << 'EOF'
 {
   "name": "ci-cd-worker",
@@ -687,7 +673,6 @@ export default {
 export { DeploymentState } from './durable-objects/deployment-state';
 EOF
 
-# Create TypeScript configuration for workers
 cat > workers/build-worker/tsconfig.json << 'EOF'
 {
   "compilerOptions": {
@@ -726,21 +711,16 @@ cat > workers/ci-cd-worker/tsconfig.json << 'EOF'
 }
 EOF
 
-# Create environment template
 cat > .env.template << 'EOF'
-# Cloudflare Workers
 CF_ACCOUNT_ID=your_account_id
 CF_API_TOKEN=your_api_token
 
-# Worker URLs
 BUILD_WORKER_URL=build-worker.yourdomain.workers.dev
 CI_CD_WORKER_URL=ci-cd-worker.yourdomain.workers.dev
 
-# GitHub
 GITHUB_TOKEN=your_github_token
 EOF
 
-# Create README.md
 cat > README.md << 'EOF'
 # Monorepo with Cloudflare Workers
 
