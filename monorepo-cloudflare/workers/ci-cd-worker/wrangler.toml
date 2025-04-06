@@ -1,0 +1,15 @@
+name = "ci-cd-worker"
+main = "src/index.ts"
+compatibility_date = "2023-10-10"
+
+[durable_objects]
+bindings = [
+  { name = "DEPLOYMENT_STATE", class_name = "DeploymentState" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["DeploymentState"]
+
+[vars]
+API_TOKEN = "your-secure-token-here"

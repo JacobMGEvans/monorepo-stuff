@@ -1,0 +1,101 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  API_TOKEN: ${{ secrets.API_TOKEN }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get changed packages
+        id: changed-packages
+        run: |
+          echo "::set-output name=packages::$(npx turbo-ignore)"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build packages
+        if: steps.changed-packages.outputs.packages != 'null'
+        run: |
+          pnpm turbo run build --filter="...[origin/main]"
+
+      - name: Notify build worker
+        if: success() && github.event_name == 'push'
+        run: |
+          curl -X POST "https://build-worker.yourdomain.workers.dev/api/builds/complete" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ env.API_TOKEN }}" \
+            -d '{"buildId": "${{ github.run_id }}", "success": true, "artifacts": ["dist"]}'
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Start deployment
+        id: start-deployment
+        run: |
+          response=$(curl -X POST "https://ci-cd-worker.yourdomain.workers.dev/api/deployments/start" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ env.API_TOKEN }}" \
+            -d '{"environment": "production", "packages": ["app1", "app2"]}')
+          echo "::set-output name=deploymentId::$(echo $response | jq -r '.deploymentId')"
+
+      - name: Deploy Workers
+        run: |
+          cd workers/build-worker && pnpm run deploy
+          cd ../ci-cd-worker && pnpm run deploy
+
+      - name: Complete deployment
+        if: always()
+        run: |
+          status="${{ job.status }}"
+          success=false
+          if [ "$status" == "success" ]; then
+            success=true
+          fi
+          
+          curl -X POST "https://ci-cd-worker.yourdomain.workers.dev/api/deployments/complete" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ env.API_TOKEN }}" \
+            -d "{\"deploymentId\": \"${{ steps.start-deployment.outputs.deploymentId }}\", \"success\": $success, \"details\": {\"commit\": \"${{ github.sha }}\"}}"

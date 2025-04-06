@@ -1,0 +1,15 @@
+name = "build-worker"
+main = "src/index.ts"
+compatibility_date = "2023-10-10"
+
+[durable_objects]
+bindings = [
+  { name = "BUILD_STATE", class_name = "BuildState" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["BuildState"]
+
+[vars]
+API_TOKEN = "your-secure-token-here"

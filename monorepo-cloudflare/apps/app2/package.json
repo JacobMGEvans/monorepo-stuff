@@ -1,0 +1,12 @@
+{
+  "name": "app2",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Building app2'"
+  },
+  "dependencies": {
+    "shared-ui": "workspace:*",
+    "utils": "workspace:*"
+  }
+}
